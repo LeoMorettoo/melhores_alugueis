@@ -15,6 +15,14 @@ def getSinopse(sinopse):
 	pass
 	return descricao_attributos
 
+def getItensImovel(itens):
+	teste = []
+	for y in itens.find_all('li'):
+		descricao_piece = normalizeText(y.getText().strip().lower())
+		teste.append(descricao_piece)
+	pass
+	return teste
+
 
 
 base_url = 'http://www.visaoimoveisindaiatuba.com.br/'
@@ -43,6 +51,7 @@ if req.status_code == 200:
 			sinopse_temp1 = getSinopse(descricoes[0])
 			sinopse_temp2 = getSinopse(descricoes[1])
 			descricoes_itens['sinopse'] = dict(**sinopse_temp1,**sinopse_temp2)
+			descricoes_itens['itens_do_imovel'] = getItensImovel(descricoes[2])
 			print(descricoes_itens)
 			exit()
 		pass
