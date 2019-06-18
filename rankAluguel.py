@@ -29,7 +29,7 @@ def valor_mensal(valores):
 			valor_mensal += val
 			pass
 		elif key == 'iptu':
-			valor_mensal += val/12
+			valor_mensal += val # já está dividido
 			pass
 		pass
 	return valor_mensal
