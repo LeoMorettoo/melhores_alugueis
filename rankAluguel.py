@@ -37,11 +37,16 @@ def valor_mensal(valores):
 alugueis_disponiveis = alugueis.alugueisDisponiveis()
 for aluguel in alugueis_disponiveis:
 
-	for key,val in aluguel['descricoes']['sinopse'].items():
+	for item in aluguel['descricoes']['sinopse']:
 		# sinopse
 		# itens_do_imovel
 		# itens_do_edificio
-		print(key,val)
+		print(item)
+		# retirar operacao
+		# retirar cidade
+		# retirar condominio
+		# retirar iptu
+		print(aluguel['descricoes']['sinopse'][item])
 		pass
 	exit()
 	geo = aluguel['geo'].split(',')
