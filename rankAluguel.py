@@ -17,7 +17,7 @@ def distancia(lat,lon):
 
 	distance = R * c
 	return distance
-	pass
+
 def valor_mensal(valores):
 	valor_mensal = 0
 	for key,val in valores.items():
@@ -34,24 +34,58 @@ def valor_mensal(valores):
 		pass
 	return valor_mensal
 
+def nota_sinopse(sinopse):
+	nota_final = 0
+	remove_from_sinopse = ['operacao','cidade','condominio','iptu']
+	dormitorios_nota = lambda n: n*1
+	banheiros_nota = lambda n: n*2
+	suites_nota = lambda n: n*4
+	tipo_nota = lambda tipo: 10 if tipo != 'padrao' else 5
+	area_util_nota = lambda area: 1 if area > 0 and area < 50 else 2 if area >= 50 and area < 100 else 3 if area >= 100 and area< 150 else 5
+	only_number = lambda string: [int(s) for s in string.split() if s.isdigit()]
+	for item in sinopse:
+		if not item in remove_from_sinopse :
+			try:
+				if item == 'dormitorios':
+					nota_final += dormitorios_nota(only_number(sinopse[item])[0])
+					pass
+				elif item == 'banheiros':
+					nota_final += banheiros_nota(only_number(sinopse[item])[0])
+					pass
+				elif item == 'suites':
+					nota_final += suites_nota(only_number(sinopse[item])[0])
+					pass
+				elif item == 'tipo do imovel':
+					nota_final += tipo_nota(sinopse[item])
+					pass
+				elif item == 'area util':
+					nota_final += area_util_nota(float(sinopse[item].replace('m2','')))
+					pass
+				pass
+			except Exception as e:
+				pass
+			pass
+		pass
+	return nota_final
+
+def nota_itens(itens):
+	return len(itens)
+
 alugueis_disponiveis = alugueis.alugueisDisponiveis()
 for aluguel in alugueis_disponiveis:
-
-	for item in aluguel['descricoes']['sinopse']:
-		# sinopse
-		# itens_do_imovel
-		# itens_do_edificio
-		print(item)
-		# retirar operacao
-		# retirar cidade
-		# retirar condominio
-		# retirar iptu
-		print(aluguel['descricoes']['sinopse'][item])
-		pass
-	exit()
+	notas = []
 	geo = aluguel['geo'].split(',')
 	aluguel['ranking_objects'] = {}
 	aluguel['ranking_objects']['distancia'] = distancia(float(geo[0]),float(geo[1]))
 	aluguel['ranking_objects']['valor_mensal'] = valor_mensal(aluguel['valores'])
-	pass
+	notas.append(nota_sinopse(aluguel['descricoes']['sinopse']))
+	notas.append(nota_itens(aluguel['descricoes']['itens_do_imovel']))
+	try:
+		if len(aluguel['descricoes']['itens_do_edificio']) > 0:
+			notas.append(nota_itens(aluguel['descricoes']['itens_do_edificio']))
+	except Exception as e:
+		pass
+
+	print(notas)
+pass
 
