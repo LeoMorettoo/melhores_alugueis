@@ -29,6 +29,11 @@ def getValores(blocks):
 		pass
 	return retorno
 
+def getGeo(string):
+	cordinates = list(map(lambda string: string[string.find('=')+1:],string[string.find('?')+1:-1].split('&')))
+	return {'lat': float(cordinates[0]),'lon': float(cordinates[1])}
+
+
 
 def alugueisDisponiveis():
 	base_url = 'http://www.visaoimoveisindaiatuba.com.br/'
@@ -48,7 +53,8 @@ def alugueisDisponiveis():
 				aluguel_object = {}
 				aluguel_object['link'] = base_url + link
 				soup = BeautifulSoup(req.content, 'html.parser')
-				aluguel_object['geo'] = soup.find('meta',{"name":"ICBM"})['content']
+				aluguel_object['geo'] = getGeo(soup.find('iframe')['src'])
+
 				aluguel_object['valores'] = getValores(soup.find_all('div', class_='price-block'))
 				# preco = valores[0].find('span').find('div').find_next_sibling().getText()
 				# condominio = valores[1].find('span').getText()
@@ -69,3 +75,4 @@ def alugueisDisponiveis():
 			pass
 	return alugueis
 
+alugueisDisponiveis()

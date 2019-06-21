@@ -71,18 +71,16 @@ def nota_sinopse(sinopse):
 def nota_itens(itens):
 	return len(itens)
 
-alugueis_disponiveis = alugueis.alugueisDisponiveis()
-for aluguel in alugueis_disponiveis:
-	notas = []
-	geo = aluguel['geo'].split(',')
-	aluguel['ranking_objects'] = {}
-	aluguel['ranking_objects']['distancia'] = distancia(float(geo[0]),float(geo[1]))
-	aluguel['ranking_objects']['valor_mensal'] = valor_mensal(aluguel['valores'])
-	notas.append(nota_sinopse(aluguel['descricoes']['sinopse']))
-	notas.append(nota_itens(aluguel['descricoes']['itens_do_imovel']))
+for aluguel in alugueis.alugueisDisponiveis():
+	notas = {}
+	notas['distancia'] = distancia(aluguel['geo']['lat'],aluguel['geo']['lon'])
+
+	notas['valor_mensal'] = valor_mensal(aluguel['valores'])
+	notas['nota_sinopse'] = nota_sinopse(aluguel['descricoes']['sinopse'])
+	notas['nota_itens_imovel'] = nota_itens(aluguel['descricoes']['itens_do_imovel'])
 	try:
-		if len(aluguel['descricoes']['itens_do_edificio']) > 0:
-			notas.append(nota_itens(aluguel['descricoes']['itens_do_edificio']))
+		if 'itens_do_edificio' in aluguel['descricoes']:
+			notas['nota_itens_edificil'] = nota_itens(aluguel['descricoes']['itens_do_edificio'])
 	except Exception as e:
 		pass
 
