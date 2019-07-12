@@ -8,12 +8,12 @@ def achou(item):
 
 def acharNumeroDeBanheiros(soup,item_para_achar):
 	itens_achados = soup.find_all(text=re.compile(item_para_achar))
-	patterns = ['((^([Bb])anheiros?)\s*)([1-9]*)','(([1-9]*))\s*(([Bb])anheiros?)']
+	patterns = ['((^([Bb])anheiros?)\s*)([1-9]*)','(([1-9]*)\s*)(([Bb])anheiros?)']
 	for banheiro in itens_achados:
 		for pattern in patterns:
 			numero_de_banheiros = re.search(pattern, banheiro)
 			if achou(numero_de_banheiros):
-				print(numero_de_banheiros.groups())
+				print(numero_de_banheiros.string)
 				pass
 			pass
 	exit()
