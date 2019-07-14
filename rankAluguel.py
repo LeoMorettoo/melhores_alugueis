@@ -180,6 +180,7 @@ def nota_total(notas):
 		nota_total += nota
 		pass
 	return nota_total
+
 def set_notas():
 	notas= []
 	for aluguel in alugueis.alugueisDisponiveis():
