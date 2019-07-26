@@ -58,7 +58,6 @@ def findPossibleNearCorrectValue(itens,patterns):
 
 def filterPossibleResult(results):
 	ns = []
-	print(results)
 	for result in results:
 		try:
 			for x in result:
@@ -95,7 +94,7 @@ def find(itensBasicPattern,patternClassType,patterns = []):
 
 urls = [
 		'https://www.gpsimoveis.imb.br/imovel/casa-com-2-quartos-para-alugar-120-m-por-1300-jardim-morada-do-sol-indaiatuba-sp/CA1608-CS0'
-		#,'http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402'
+		,'http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402'
 		]
 imoveis = []
 for url in urls:
