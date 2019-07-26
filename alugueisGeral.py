@@ -1,83 +1,102 @@
 import requests
+import re
+import json
+
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
-import re
 
-def itemfound(item):
-	return True if item is not None and not item == [] else False
+def isEmpty(item):
+	return True if item is None or item == [] else False
 
 def onlyNumbers(val):
 	pattern_only_numbers_brazil_pattern = '(\d+(?:\.\d{3})?)(,?\d{2})?'
 	return float(re.search(pattern_only_numbers_brazil_pattern,val).group().replace('.','').replace(',','.'))
 
-def getItenWithREGEX(itens_achados,patterns):
-	for iten in itens_achados:
-		for pattern in patterns:
-			try:
-				numero_de_itens = re.search(pattern, iten)
-			except Exception as e:
-				return None
-			if itemfound(numero_de_itens):
-				return numero_de_itens.group()
-	return None
+def findOccurrencesByBasicTexts(raw_item):
+	return page_content.find_all(text=re.compile(raw_item))
 
-def getNearElemements(itens_achados):
-	array_near_elements = []
-	for item in itens_achados:
-		item_parent = item.find_parent()
-		if itemfound(item_parent):
-			item_parent_siblings = item_parent.find_next_sibling()
-			if itemfound(item_parent_siblings):
-				array_near_elements += item_parent_siblings
-	return array_near_elements
 
-def getItem(soup,item_para_achar,patterns,apenasNUmeros = True):
-	itens_achados = soup.find_all(text=re.compile(item_para_achar))
-	if not itemfound(itens_achados):
+def dataExtractionPatterns(itensBasicPattern,patternClassType):
+	lib_of_patterns = {}
+	lib_of_patterns['number_of'] = ['(\s?)(:?)(\s?)([0-9]+)(\s?)(PATTERHERE\s*)|(PATTERHERE\s*)(\s?)(:?)(\s?)([0-9]+)(\s?)']
+	lib_of_patterns['cost_of'] =  ['((PATTERHERE)\s)(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?','(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?']
+	if isinstance(itensBasicPattern, list):
+		result_patterns = []
+		for itenPattern in itensBasicPattern:
+			for pattern in lib_of_patterns[patternClassType]:
+				result_patterns.append(pattern.replace('PATTERHERE',itenPattern))
+		return result_patterns
+	else:
+		return [patterns.replace('PATTERHERE',itensBasicPattern) for patterns in lib_of_patterns[patternClassType] ]
+
+def applyComplexRegexPatterByClassType(itens,patternClassType):
+	if isEmpty(itens):
 		return None
-	item = getItenWithREGEX(itens_achados,patterns)
-	if itemfound(item):
-		return onlyNumbers(item) if apenasNUmeros == True else item
-	else:
-		patterns = ['((' + item_para_achar + ')\s)(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?','(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?']
-		item = getItenWithREGEX(getNearElemements(itens_achados),patterns)
-		if itemfound(item):
-			return onlyNumbers(item) if apenasNUmeros == True else item
+
+	found_itens = []
+	for iten in itens:
+		for pattern in patternClassType:
+			try:
+				search = re.search(pattern, iten.string)
+				if not isEmpty(search):
+					found_itens.append(search)
+			except Exception as e:
+				pass
+
+	if not isEmpty(found_itens):
+		return found_itens
+
 	return None
 
-def getBanheiros(soup,item_para_achar):
-	patterns = ['(\s?)(:?)(\s?)([0-9]+)(\s?)(' + item_para_achar + '\s*)|(' + item_para_achar + '\s*)(\s?)(:?)(\s?)([0-9]+)(\s?)']
-	return getItem(soup,item_para_achar,patterns)
+def findPossibleNearCorrectValue(itens,patterns):
+	for iten in itens:
+		parent = iten.find_parent()
+		uncles = parent.find_next_sibling()
+		if not isEmpty(uncles):
+			raw_itens = applyComplexRegexPatterByClassType(uncles,patterns)
+			return raw_itens
 
-def getQuartos(soup,item_para_achar):
-	patterns = ['(\s?)(:?)(\s?)([0-9]+)(\s?)(' + item_para_achar + '\s*)|(' + item_para_achar + '\s*)(\s?)(:?)(\s?)([0-9]+)(\s?)']
-	return getItem(soup,item_para_achar,patterns)
+def filterPossibleResult(results):
+	ns = []
+	print(results)
+	for result in results:
+		try:
+			for x in result:
+				ns.append(onlyNumbers(x.group()))
+			removeDuplicates = lambda x : list(dict.fromkeys(x))
+			maiorValor = lambda x : max(x)
+			ns = removeDuplicates(ns)
+			ns = maiorValor(ns)
+			return ns
+		except Exception as e:
+			return None
 
-def getSuites(soup,item_para_achar):
-	patterns = ['(\s?)(:?)(\s?)([0-9]+)(\s?)(' + item_para_achar + '\s*)|(' + item_para_achar + '\s*)(\s?)(:?)(\s?)([0-9]+)(\s?)']
-	return getItem(soup,item_para_achar,patterns)
-
-def acharCondominio(soup,item_para_achar):
-	patterns = ['(\s?)(:?)(\s?)([0-9]+)(\s?)(' + item_para_achar + '\s*)|(' + item_para_achar + '\s*)(\s?)(:?)(\s?)([0-9]+)(\s?)']
-	return getItem(soup,item_para_achar,patterns)
-
-def getLocacao(soup,item_para_achar):
-	if isinstance(item_para_achar, list):
-		retorno = []
-		for item in item_para_achar:
-			patterns = ['((' + item + ')\s)(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?']
-			temp = getItem(soup,item,patterns)
-			if itemfound(temp):
-				retorno.append(temp)
-		if len(retorno) == 1:
-			retorno = retorno[0]
+def find(itensBasicPattern,patternClassType,patterns = []):
+	basic_itens = []
+	results = []
+	if isinstance(itensBasicPattern, list):
+		for iten in itensBasicPattern:
+			basic_itens.append(findOccurrencesByBasicTexts(iten))
 	else:
-		retorno = ''
-		patterns = ['((' + item_para_achar + ')\s)(\s?R\$\s?)?(\d+(?:\.\d{3})?)(,?\d{2})?(\s?R\$\s?)?']
-		retorno = getItem(soup,item_para_achar,patterns)
-	return retorno if itemfound(retorno) else None
+		basic_itens.append(findOccurrencesByBasicTexts(itensBasicPattern))
+	for iten in basic_itens:
+		patterns = dataExtractionPatterns(itensBasicPattern,patternClassType)
+		raw_result = applyComplexRegexPatterByClassType(iten,patterns)
 
-urls = ['https://www.gpsimoveis.imb.br/imovel/casa-com-4-quartos-para-locacao-r-4-500-00-jardim-portal-dos-ipes-indaiatuba-sp/CA10386-CS0','http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402']
+		if isEmpty(raw_result):
+			raw_result = findPossibleNearCorrectValue(iten,patterns)
+
+		if not isEmpty(raw_result):
+			results.append(raw_result)
+
+	result = filterPossibleResult(results)
+	return result
+
+
+urls = [
+		'https://www.gpsimoveis.imb.br/imovel/casa-com-2-quartos-para-alugar-120-m-por-1300-jardim-morada-do-sol-indaiatuba-sp/CA1608-CS0'
+		#,'http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402'
+		]
 imoveis = []
 for url in urls:
 	imovel = {}
@@ -87,14 +106,19 @@ for url in urls:
 		page_content = BeautifulSoup(req.content, 'html5lib')
 		[s.extract() for s in page_content('script')]
 		try:
-			imovel['numero_de_banheiros'] = getBanheiros(page_content, '[Bb]anheiros?')
-			imovel['numero_de_quartos'] = getQuartos(page_content, '[Qq]uartos?')
-			imovel['numero_de_suites'] = getSuites(page_content, '[Ss]uítes?')
-			imovel['valor_de_locacao'] = getLocacao(page_content, ['[Aa]luguel','[Ll]ocação'])
-			imovel['valor_de_condominio'] = acharCondominio(page_content, '[Cc]ondomínio')
-			imovel['valor_de_IPTU'] = acharCondominio(page_content, 'IPTU')
+			imovel['numero_de_banheiros'] = find('[Bb]anheiros?', patternClassType="number_of")
+			imovel['numero_de_quartos'] = find('[Qq]uartos?', patternClassType="number_of")
+			imovel['numero_de_suites'] = find('[Ss]uítes?', patternClassType="number_of")
+			imovel['valor_de_locacao'] = find(['[Aa]luguel','[Ll]ocação'] , patternClassType="cost_of")
+			imovel['valor_de_condominio'] = find('[Cc]ondomínio' , patternClassType="cost_of")
+			imovel['valor_de_IPTU'] = find('IPTU', patternClassType="cost_of")
 		except Exception as e:
 			raise e
+
 		imoveis.append(imovel)
+
 print(imoveis)
+exit()
+
+print(json.dumps(imoveis,indent=4))
 exit()
