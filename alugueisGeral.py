@@ -1,20 +1,10 @@
-import requests
 import re
 import json
 
-from bs4 import BeautifulSoup
-from user_agent import generate_user_agent
-
-def isEmpty(item):
-	return True if item is None or item == [] else False
-
-def onlyNumbers(val):
-	pattern_only_numbers_brazil_pattern = '(\d+(?:\.\d{3})?)(,?\d{2})?'
-	return float(re.search(pattern_only_numbers_brazil_pattern,val).group().replace('.','').replace(',','.'))
+from funcoesAuxiliares import *
 
 def findOccurrencesByBasicTexts(raw_item):
 	return page_content.find_all(text=re.compile(raw_item))
-
 
 def dataExtractionPatterns(itensBasicPattern,patternClassType):
 	lib_of_patterns = {}
@@ -49,12 +39,21 @@ def applyComplexRegexPatterByClassType(itens,patternClassType):
 	return None
 
 def findPossibleNearCorrectValue(itens,patterns):
+	raw_itens = []
 	for iten in itens:
+
 		parent = iten.find_parent()
+		if not isEmpty(parent):
+			raw_itens.append(applyComplexRegexPatterByClassType(parent,patterns))
+
 		uncles = parent.find_next_sibling()
 		if not isEmpty(uncles):
-			raw_itens = applyComplexRegexPatterByClassType(uncles,patterns)
-			return raw_itens
+			raw_itens.append(applyComplexRegexPatterByClassType(uncles,patterns))
+
+		grandParent = parent.find_parent()
+		if not isEmpty(grandParent):
+			raw_itens.append(applyComplexRegexPatterByClassType(grandParent,patterns))
+	return raw_itens
 
 def filterPossibleResult(results):
 	ns = []
@@ -68,6 +67,7 @@ def filterPossibleResult(results):
 			ns = maiorValor(ns)
 			return ns
 		except Exception as e:
+			raise e
 			return None
 
 def find(itensBasicPattern,patternClassType,patterns = []):
@@ -80,41 +80,37 @@ def find(itensBasicPattern,patternClassType,patterns = []):
 		basic_itens.append(findOccurrencesByBasicTexts(itensBasicPattern))
 	for iten in basic_itens:
 		patterns = dataExtractionPatterns(itensBasicPattern,patternClassType)
+
 		raw_result = applyComplexRegexPatterByClassType(iten,patterns)
+		if not isEmpty(raw_result):
+			results.append(raw_result)
 
-		if isEmpty(raw_result):
-			raw_result = findPossibleNearCorrectValue(iten,patterns)
-
+		raw_result = findPossibleNearCorrectValue(iten,patterns)
 		if not isEmpty(raw_result):
 			results.append(raw_result)
 
 	result = filterPossibleResult(results)
 	return result
 
-
 urls = [
-		'https://www.gpsimoveis.imb.br/imovel/casa-com-2-quartos-para-alugar-120-m-por-1300-jardim-morada-do-sol-indaiatuba-sp/CA1608-CS0'
-		,'http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402'
+		# 'https://www.gpsimoveis.imb.br/imovel/casa-com-2-quartos-para-alugar-120-m-por-1300-jardim-morada-do-sol-indaiatuba-sp/CA1608-CS0'
+		'http://www.visaoimoveisindaiatuba.com.br/alugar/Indaiatuba/Casa/Padrao/Jardim-Sao-Conrado/893402'
 		]
 imoveis = []
 for url in urls:
 	imovel = {}
-	headers = {'User-Agent': generate_user_agent(device_type="desktop", os=('mac', 'linux'))}
-	req = requests.get(url,timeout=10,headers=headers)
-	if req.status_code == 200:
-		page_content = BeautifulSoup(req.content, 'html5lib')
-		[s.extract() for s in page_content('script')]
-		try:
-			imovel['numero_de_banheiros'] = find('[Bb]anheiros?', patternClassType="number_of")
-			imovel['numero_de_quartos'] = find('[Qq]uartos?', patternClassType="number_of")
-			imovel['numero_de_suites'] = find('[Ss]uítes?', patternClassType="number_of")
-			imovel['valor_de_locacao'] = find(['[Aa]luguel','[Ll]ocação'] , patternClassType="cost_of")
-			imovel['valor_de_condominio'] = find('[Cc]ondomínio' , patternClassType="cost_of")
-			imovel['valor_de_IPTU'] = find('IPTU', patternClassType="cost_of")
-		except Exception as e:
-			raise e
-
+	try:
+		page_content = parseHtml(getContentFromPage(url))
+		imovel['numero_de_banheiros'] = find('[Bb]anheiros?', patternClassType="number_of")
+		# imovel['numero_de_quartos'] = find(['[Qq]uartos?','[Dd]ormitórios?'], patternClassType="number_of")
+		# imovel['numero_de_suites'] = find('[Ss]uítes?', patternClassType="number_of")
+		# imovel['valor_de_locacao'] = find(['[Aa]luguel','[Ll]ocação'] , patternClassType="cost_of")
+		# imovel['valor_de_condominio'] = find('[Cc]ondomínio' , patternClassType="cost_of")
+		# imovel['valor_de_IPTU'] = find('IPTU', patternClassType="cost_of")
 		imoveis.append(imovel)
+	except Exception as e:
+		raise e
+
 
 print(imoveis)
 exit()
