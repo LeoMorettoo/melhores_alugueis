@@ -67,7 +67,6 @@ def filterPossibleResult(results):
 			ns = maiorValor(ns)
 			return ns
 		except Exception as e:
-			raise e
 			return None
 
 def find(itensBasicPattern,patternClassType,patterns = []):
@@ -78,6 +77,7 @@ def find(itensBasicPattern,patternClassType,patterns = []):
 			basic_itens.append(findOccurrencesByBasicTexts(iten))
 	else:
 		basic_itens.append(findOccurrencesByBasicTexts(itensBasicPattern))
+
 	for iten in basic_itens:
 		patterns = dataExtractionPatterns(itensBasicPattern,patternClassType)
 
@@ -101,19 +101,16 @@ for url in urls:
 	imovel = {}
 	try:
 		page_content = parseHtml(getContentFromPage(url))
+
 		imovel['numero_de_banheiros'] = find('[Bb]anheiros?', patternClassType="number_of")
-		# imovel['numero_de_quartos'] = find(['[Qq]uartos?','[Dd]ormitórios?'], patternClassType="number_of")
-		# imovel['numero_de_suites'] = find('[Ss]uítes?', patternClassType="number_of")
-		# imovel['valor_de_locacao'] = find(['[Aa]luguel','[Ll]ocação'] , patternClassType="cost_of")
-		# imovel['valor_de_condominio'] = find('[Cc]ondomínio' , patternClassType="cost_of")
-		# imovel['valor_de_IPTU'] = find('IPTU', patternClassType="cost_of")
+		imovel['numero_de_quartos'] = find(['[Qq]uartos?','[Dd]ormitórios?'], patternClassType="number_of")
+		imovel['numero_de_suites'] = find('[Ss]uítes?', patternClassType="number_of")
+		imovel['valor_de_locacao'] = find(['[Aa]luguel','[Ll]ocação'] , patternClassType="cost_of")
+		imovel['valor_de_condominio'] = find('[Cc]ondomínio' , patternClassType="cost_of")
+		imovel['valor_de_IPTU'] = find('IPTU', patternClassType="cost_of")
 		imoveis.append(imovel)
 	except Exception as e:
 		raise e
-
-
-print(imoveis)
-exit()
 
 print(json.dumps(imoveis,indent=4))
 exit()

@@ -13,7 +13,7 @@ def isEmpty(item):
 
 def onlyNumbers(val):
 	pattern_only_numbers_brazil_pattern = '(\d+(?:\.\d{3})?)(,?\d{2})?'
-	return float(re.search(pattern_only_numbers_brazil_pattern,val).group().replace('.','').replace(',','.'))
+	return float(re.search(pattern_only_numbers_brazil_pattern,val).group().replace('.','').replace(',','.')) if not isEmpty(val) else None
 
 
 def normalizeText(texto):
@@ -39,7 +39,19 @@ def getContentFromPage(url):
 		return None
 
 def parseHtml(html):
+	removeTagArray = ['b','strong','i','em','mark','del','small','ins','sub','sup']
 	page_content = BeautifulSoup(html, 'html5lib')
-	for script in page_content(["script", "style"]):
-	    script.extract()    # rip it out
-	return page_content
+
+	for script in page_content(["script", "style","noscript"]):
+		script.extract()
+
+	for comentarios in page_content(text=lambda text: isinstance(text, Comment)):
+		comentarios.extract()
+
+	for toRemoveTag in page_content(removeTagArray):
+		try:
+			toRemoveTag.unwrap()
+		except Exception as e:
+			pass
+
+	return BeautifulSoup(str(page_content), 'html5lib')
