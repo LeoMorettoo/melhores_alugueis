@@ -33,8 +33,6 @@ def getGeo(string):
 	cordinates = list(map(lambda string: string[string.find('=')+1:],string[string.find('?')+1:-1].split('&')))
 	return {'lat': float(cordinates[0]),'lon': float(cordinates[1])}
 
-
-
 def alugueisDisponiveis():
 	base_url = 'http://www.visaoimoveisindaiatuba.com.br/'
 	busca_centro = 'pesquisa-de-imoveis/?locacao_venda=L&id_cidade%5B%5D=103&id_bairro%5B%5D=340&id_bairro%5B%5D=6322&id_bairro%5B%5D=3085&id_bairro%5B%5D=3172&id_bairro%5B%5D=1702&id_bairro%5B%5D=6195&finalidade=0&dormitorio=0&garagem=1&vmi=&vma='

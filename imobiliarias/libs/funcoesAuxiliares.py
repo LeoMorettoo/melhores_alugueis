@@ -1,5 +1,6 @@
 import re
 import requests
+import os
 
 from bs4 import BeautifulSoup
 from bs4.element import Comment
@@ -15,14 +16,37 @@ def onlyNumbers(val):
 	pattern_only_numbers_brazil_pattern = '(\d+(?:\.\d{3})?)(,?\d{2})?'
 	return float(re.search(pattern_only_numbers_brazil_pattern,val).group().replace('.','').replace(',','.')) if not isEmpty(val) else None
 
-
 def normalizeText(texto):
 	return normalize('NFKD', texto).encode('ASCII','ignore').decode('ASCII')
 
+def fileName(name):
+	return  name.replace('http://','').replace('https://','').replace('/','').replace('.','')+'.html'
+
+def saveFile(file,name):
+	savePath = os.path.dirname(os.path.abspath(__file__)) + r'/cache/'
+	name = savePath + fileName(name)
+	with open(name,'w+') as f:
+		f.write(file)
+	f.close()
+	return name
+
+def checkFile(name):
+	fullPath = os.path.dirname(os.path.abspath(__file__)) + r'/cache/' + fileName(name)
+	return os.path.exists(fullPath)
+
+def openFile(name):
+	fullPath = os.path.dirname(os.path.abspath(__file__)) + r'/cache/' + fileName(name)
+	f = open(fullPath, "r")
+	return f.read()
 
 def getContentFromPage(url):
 	if isEmpty(url):
 		return None
+
+
+	if checkFile(url):
+		return openFile(url)
+
 	try:
 		headers = {'User-Agent': generate_user_agent(device_type="desktop", os=('mac', 'linux'))}
 		session = requests.Session()
@@ -32,8 +56,8 @@ def getContentFromPage(url):
 		session.mount('https://', adapter)
 		req = session.get(url,timeout=5,headers=headers)
 		if req.status_code == 200:
+			saveFile(req.text,url)
 			return req.content
-
 		return None
 	except Exception as e:
 		return None
